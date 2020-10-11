@@ -4,7 +4,7 @@ import glob
 import shutil
 import multiprocessing
 import functools
-import tqdm
+from tqdm import tqdm
 
 
 # find all dataset filepath
@@ -18,7 +18,13 @@ def copy_all_file_to_target_directory(data, target_directory):
     return 0
 
 
-def parallel_preprocess(filelist, target_directory, parallel=None):
+def move_all_file_to_target_directory(data, target_directory):
+    shutil.move(data, target_directory)
+    return 0
+
+
+def parallel_preprocess(filelist, target_directory, type='copy', parallel=None):
+
     try:
         if not (os.path.isdir(target_directory)):
             os.makedirs(os.path.join(target_directory))
@@ -27,6 +33,9 @@ def parallel_preprocess(filelist, target_directory, parallel=None):
             print("Failed to create directory!!!!!")
             raise
     with multiprocessing.Pool(parallel) as p:
-        func = functools.partial(copy_all_file_to_target_directory, target_directory=target_directory)
-        output = list(tqdm(p.imap(func, filelist), total=len(filelist)))
-        print(output)
+        if type == 'copy':
+            func = functools.partial(copy_all_file_to_target_directory, target_directory=target_directory)
+            output = list(tqdm(p.imap(func, filelist), total=len(filelist)))
+        elif type == 'move':
+            func = functools.partial(move_all_file_to_target_directory, target_directory=target_directory)
+            output = list(tqdm(p.imap(func, filelist), total=len(filelist)))
