@@ -61,6 +61,9 @@ def parallel_preprocess(filelist, target_directory, _type='copy', parallel=None)
         elif _type == 'remove':
             func = functools.partial(remove_all_file_to_target_directory, target_directory=target_directory)
             output = list(tqdm(p.imap(func, filelist), total=len(filelist)))
+        elif _type=='copyto':
+            func = functools.partial(copy_to_save_txt, target_directory=target_directory, encoding='cp949')
+            output = list(tqdm(p.imap(func, filelist), total=len(filelist)))
 
 
 def wav_text_pair(input_dir):
@@ -74,8 +77,51 @@ def wav_text_pair(input_dir):
         wav[idx] = file.replace('.wav', '')
     for idx, file in enumerate(txt):
         txt[idx] = file.replace('.txt', '')
+        txt[idx] = txt[idx].replace('KsponScript', 'KsponSpeech')
 
     wav = set(wav)
     txt = set(txt)
-    print(wav.difference(txt))
+    # print(wav.difference(txt))
     print(txt.difference(wav))
+    print(len(wav.difference(txt)))
+    print(len(txt.difference(wav)))
+
+
+def read_txt_file(file_path, encoding='utf8'):
+    lines = []
+    f = open(file_path, 'r', encoding=encoding, errors='ignore')
+    while True:
+        line = f.readline()
+        if not line:
+            break
+        lines.append(line)
+    f.close()
+    return lines
+
+
+def read_text_file_one_line(file_path, encoding='utf8'):
+    f = open(file_path, 'r', encoding=encoding)
+    line = f.readline()
+    f.close()
+    line = line.replace('\n', '')
+    return line
+
+
+def create_file(filepath):
+    f = open(filepath, 'w', encoding='utf8')
+    return f
+
+
+def write_txt_file(line, target_filepath):
+    file = create_file(target_filepath)
+    file.write(line[0])
+    file.close()
+    return True
+
+
+def copy_to_save_txt(filepath, target_directory, encoding='utf8'):
+    line = read_txt_file(filepath, encoding=encoding)
+    pure_filename = get_pure_filename(filepath)
+    new_filepath = '{}/{}'.format(target_directory, pure_filename)
+    status = write_txt_file(line, new_filepath)
+
